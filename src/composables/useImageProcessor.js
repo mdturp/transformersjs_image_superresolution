@@ -1,6 +1,7 @@
 import { ref, reactive, computed } from 'vue'
 
 export default function useImageProcessor() {
+  const modelQuality = ref('low')
   const canvasRef = ref(null)
   const imageRef = ref(null)
   const isProcessing = ref(false)
@@ -17,6 +18,13 @@ export default function useImageProcessor() {
   })
 
   const reset = () => {
+    // Clear the canvas
+    if (!canvasRef.value) {
+      const canvas = canvasRef.value
+      const context = canvas.getContext('2d')
+      context.clearRect(0, 0, canvas.width, canvas.height)
+    }
+
     uploadedImageSrc.value = ''
     hasSuperresolution.value = false
     selectedImageUrl.value = ''
@@ -84,6 +92,7 @@ export default function useImageProcessor() {
   }
 
   return {
+    modelQuality,
     canvasRef,
     imageRef,
     isProcessing,
