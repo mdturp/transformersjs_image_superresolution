@@ -1,5 +1,7 @@
 import { ref, reactive, computed } from 'vue'
 
+const MAX_SELCTION_SIZE = 200
+
 export default function useImageProcessor() {
   const modelQuality = ref('low')
   const canvasRef = ref(null)
@@ -79,10 +81,14 @@ export default function useImageProcessor() {
   const resizeSelection = (event) => {
     if (isProcessing.value) return
     if (event.touches) event.preventDefault()
+    const image = imageRef.value
+    if (!image) return
+    const scaleX = image.naturalWidth / image.width
+    const scaleY = image.naturalHeight / image.height
     if (selecting.value) {
       const { x, y } = getEventCoordinates(event)
-      selection.width = x - selection.startX
-      selection.height = y - selection.startY
+      selection.width = Math.min(x - selection.startX, MAX_SELCTION_SIZE/scaleX)
+      selection.height = Math.min(y - selection.startY, MAX_SELCTION_SIZE/scaleY)
     }
   }
 
