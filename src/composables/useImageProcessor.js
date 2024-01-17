@@ -1,6 +1,6 @@
 import { ref, reactive, computed } from 'vue'
 
-const MAX_SELCTION_SIZE = 200
+export const MAX_SELCTION_SIZE = 200
 
 export default function useImageProcessor() {
   const modelQuality = ref('low')

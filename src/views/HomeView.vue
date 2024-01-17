@@ -7,9 +7,22 @@ import HorizontalLine from '@/components/HorizontalLine.vue'
 import Spinner from '@/components/Spinner.vue'
 
 import useImageProcessor from '@/composables/useImageProcessor'
+import ProgressBar from '@/components/ProgressBar.vue'
+import { MAX_SELCTION_SIZE } from '@/composables/useImageProcessor'
 
 import BackgroundWorker from '@/background.worker.js?worker'
+import { onMounted, onUnmounted, ref } from 'vue'
 
+const progress = ref(0)
+
+let worker = null
+onMounted(() => {
+  worker = new BackgroundWorker()
+})
+
+onUnmounted(() => {
+  worker.terminate()
+})
 
 const {
   modelQuality,
@@ -71,7 +84,6 @@ async function run() {
     return
   }
 
-  const worker = new BackgroundWorker()
   if (isProcessing.value) {
     return
   }
@@ -94,6 +106,10 @@ async function run() {
 
   worker.onmessage = function (e) {
     const response = e.data
+    if (response.status === 'progress') {
+      progress.value = response.progress
+      return
+    }
     if (response.status === 'error') {
       console.error(response.message)
       return
@@ -118,7 +134,6 @@ async function run() {
       }
       hasSuperresolution.value = true
       ctx.putImageData(imageData, 0, 0)
-      worker.terminate()
     }
   }
 }
@@ -131,7 +146,9 @@ async function run() {
       <ListTitle class="mt-8">Start by uploading an Image! </ListTitle>
       <UploadImage @upload="handleImageUpload" />
       <HorizontalLine v-if="uploadedImageSrc" />
-      <ListTitle v-if="uploadedImageSrc"> Select an area to upscale! </ListTitle>
+      <ListTitle v-if="uploadedImageSrc">
+        {{ `Select an area to upscale (max ${MAX_SELCTION_SIZE}x${MAX_SELCTION_SIZE} px)` }}
+      </ListTitle>
       <div
         class="relative"
         @mousedown="startSelection"
@@ -153,15 +170,13 @@ async function run() {
       </div>
       <HorizontalLine v-if="selection.show" />
       <div class="flex flex-col items-center justify-center" v-if="selection.show">
-        <ListTitle>
-          Select the image quality!
-        </ListTitle>
+        <ListTitle> Select the image quality! </ListTitle>
         <select
           class="block py-2.5 px-0 text-sm bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-gray-200 peer"
           v-model="modelQuality"
         >
-          <option value="low">Fast & Low Quality</option>
-          <option value="high">Slow & High Quality</option>
+          <option value="low">Fast & Low Quality (2x)</option>
+          <option value="high">Slow & High Quality (4x)</option>
         </select>
       </div>
       <HorizontalLine v-if="selection.show" />
@@ -173,10 +188,11 @@ async function run() {
       >
         Get Superresolution
       </button>
+      <ProgressBar :progress="progress" v-if="progress > 0.1 && progress <= 99" />
       <HorizontalLine v-if="hasSuperresolution" />
       <ListTitle v-if="hasSuperresolution">Here is your Superresolution!</ListTitle>
       <div class="mt-4" v-if="isProcessing" role="status">
-        <Spinner />        
+        <Spinner />
       </div>
       <canvas class="mt-4" ref="canvasRef"></canvas>
     </div>

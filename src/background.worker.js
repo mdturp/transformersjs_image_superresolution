@@ -3,11 +3,7 @@
 import { pipeline, env } from '@xenova/transformers'
 
 env.allowLocalModels = import.meta.env.VITE_ALLOW_LOCAL_MODELS !== 'false'
-env.useBrowserCache = true //import.meta.env.VITE_USE_BROWSER_CACHE !== 'false'
-
-console.log('allowLocalModels', env.allowLocalModels)
-console.log('useBrowserCache', env.useBrowserCache)
-
+env.useBrowserCache = true
 
 class SuperResolutionPipeline {
   static task = 'image-to-image'
@@ -17,10 +13,8 @@ class SuperResolutionPipeline {
   static async getInstance(modelQuality, progress_callback = null) {
     let model = ''
     if (modelQuality == 'low') {
-      console.log('Using low quality model')
       model = 'Xenova/swin2SR-lightweight-x2-64'
     } else {
-      console.log('Using high quality model')
       model = 'Xenova/swin2SR-realworld-sr-x4-64-bsrgan-psnr'
     }
     if (this.instance === null || this.model_quality !== modelQuality) {
@@ -43,12 +37,7 @@ self.addEventListener('message', async (event) => {
       self.postMessage(x)
     })
 
-    let start = new Date().getTime()
     let result = await upscaler(imageUrl)
-    let end = new Date().getTime()
-
-    console.log(`Took ${end - start}ms to run the model`)
-    console.log(result)
 
     // Send the processed image data back to the main thread
     self.postMessage({
